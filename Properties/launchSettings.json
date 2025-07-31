@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "CopyCat": {
+      "commandName": "Project",
+      "commandLineArgs": "\"D:\\Test\\ORIGINAL\" \r\n\"D:\\Test\\REPLICA\" \r\n\"10\" \r\n\"D:\\Test\\Logs and other\""
+    }
+  }
+}
