@@ -26,6 +26,14 @@ namespace CopyCat
             }
         }
 
+        public static void DeleteDirectory(string path)
+        {
+            if (DirectoryExist(path))
+            {
+                System.IO.Directory.Delete(path, true);
+            }
+        }
+
         public static bool CheckAndCreateDirectory(string path)
         {
             if (!DirectoryExist(path))

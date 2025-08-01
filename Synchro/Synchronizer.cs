@@ -10,24 +10,29 @@ namespace CopyCat.Synchro
     {
         private readonly String _OriginPath;
         private readonly String _ReplicaPath;
+        private Comparer comparer;
 
         public Synchronizer(String originPath, String replicaPath)
         {
             _OriginPath = originPath;
             _ReplicaPath = replicaPath;
+            comparer = new Comparer();
         }
 
         // Main synchronization method
         public void Synchronize()
         {
             Console.WriteLine($"Synchronizing from {_OriginPath} to {_ReplicaPath}");
+            
+            var Files = System.IO.Directory.GetFiles(_OriginPath, "*", System.IO.SearchOption.AllDirectories);
+
+            // TODO
+            // 1. Check every file and copy it if not exists or different
+            // 2. Substract replica files from origin and delete remaining
+            // 3. Repeat every X seconds
         }
 
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="originFilePath"> Relative path from origin directory </param>
-        /// <param name="fileName"> File name with extension </param>
+        //TO CHANGE
         public void CopySingleFile(string originFilePath, string fileName)
         {
             String FilePath = Path.Combine(_OriginPath, originFilePath);

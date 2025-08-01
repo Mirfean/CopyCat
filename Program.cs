@@ -1,5 +1,4 @@
-﻿// See https://aka.ms/new-console-template for more information
-using CopyCat;
+﻿using CopyCat;
 using CopyCat.Synchro;
 
 partial class Program
@@ -12,18 +11,43 @@ partial class Program
             return;
         }
 
-        if (!FileManager.CheckAndCreateDirectory(args[0]))
+        if (!FileManager.DirectoryExist(args[0]))
         {
-            Console.WriteLine($"Origin path '{args[0]}' does not exist. Folder has been created.");
+            Console.WriteLine($"Origin path '{args[0]}' does not exist.");
+            if (UserChoice("Do you want to create it?"))
+            {
+                FileManager.CreateDirectory(args[0]);
+            }
+            else return;
         }
 
-        //TODO - Add check if replica path already exists and clear it if it does
-        FileManager.CheckAndCreateDirectory(args[1]);
-        
+        if (FileManager.DirectoryExist(args[1]))
+        {
+            Console.WriteLine($"Replica path '{args[1]}' already exists.");
+            if (UserChoice("Do you want to delete it?"))
+            {
+                FileManager.DeleteDirectory(args[1]);
+            }
+            else return;
+        }
 
+        FileManager.CreateDirectory(args[1]);
+
+        //Start synchronization
         Synchronizer synchronizer = new Synchronizer(args[0], args[1]);
-
         synchronizer.Synchronize();
+    }
+
+    static bool UserChoice(string message)
+    {
+        Console.WriteLine(message + " [y/n]");
+        string choice = Console.ReadLine().ToLower();
+        if (choice != "y" && choice != "n")
+        {
+            Console.WriteLine("Invalid input");
+            UserChoice(message);
+        }
+        return choice == "y";
     }
 }
 
