@@ -10,19 +10,19 @@ namespace CopyCat
     {
         public static bool FileExist(string path)
         {
-            return System.IO.File.Exists(path);
+            return File.Exists(path);
         }
 
         public static bool DirectoryExist(string path)
         {
-            return System.IO.Directory.Exists(path);
+            return Directory.Exists(path);
         }
 
         public static void CreateDirectory(string path)
         {
             if (!DirectoryExist(path))
             {
-                System.IO.Directory.CreateDirectory(path);
+                Directory.CreateDirectory(path);
             }
         }
 
@@ -30,7 +30,7 @@ namespace CopyCat
         {
             if (DirectoryExist(path))
             {
-                System.IO.Directory.Delete(path, true);
+                Directory.Delete(path, true);
             }
         }
 

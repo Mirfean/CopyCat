@@ -5,11 +5,44 @@ partial class Program
 {
     static void Main(string[] args)
     {
+        Console.WriteLine("CopyCat Synchronization Tool by Patryk Gusarzewski");
+
+        InitCheckers(args);
+
+        //Start synchronization
+        Synchronizer synchronizer = new Synchronizer(args[0], args[1], args[3]);
+        synchronizer.Synchronize();
+    }
+
+    public static bool UserChoice(string message)
+    {
+
+        Console.WriteLine(message + " [y/n]");
+        string choice = Console.ReadLine().ToLower();
+        if (choice == null)
+        {
+            Console.WriteLine("Invalid input");
+            return UserChoice(message);
+        }
+        if (choice != "y" && choice != "n")
+        {
+            Console.WriteLine("Invalid input");
+            return UserChoice(message);
+        }
+        return choice == "y";
+    }
+
+    static void InitCheckers(string[] args)
+    {
+        // ARGUMENTS CHECK
+
         if (args.Length != 4)
         {
             Console.WriteLine("Please provide four arguments: <OriginPath> <ReplicaPath> <Synchronization Interval> <Logs path>");
             return;
         }
+
+        // ORIGIN PATH CHECK
 
         if (!FileManager.DirectoryExist(args[0]))
         {
@@ -21,6 +54,8 @@ partial class Program
             else return;
         }
 
+        // REPLICA PATH CHECK
+
         if (FileManager.DirectoryExist(args[1]))
         {
             Console.WriteLine($"Replica path '{args[1]}' already exists.");
@@ -30,24 +65,13 @@ partial class Program
             }
             else return;
         }
-
         FileManager.CreateDirectory(args[1]);
 
-        //Start synchronization
-        Synchronizer synchronizer = new Synchronizer(args[0], args[1]);
-        synchronizer.Synchronize();
-    }
+        // TIME INTERVAL CHECK
+        
 
-    static bool UserChoice(string message)
-    {
-        Console.WriteLine(message + " [y/n]");
-        string choice = Console.ReadLine().ToLower();
-        if (choice != "y" && choice != "n")
-        {
-            Console.WriteLine("Invalid input");
-            UserChoice(message);
-        }
-        return choice == "y";
+        // LOGS PATH CHECK
+
     }
 }
 
