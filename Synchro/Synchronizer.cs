@@ -7,6 +7,13 @@ using System.IO;
 
 namespace CopyCat.Synchro
 {
+    public enum InteractionType
+    {
+        COPY,
+        UPDATE,
+        DELETE
+    }
+
     internal class Synchronizer
     {
         private readonly String _OriginPath;
@@ -37,7 +44,7 @@ namespace CopyCat.Synchro
                 relativePath = Path.GetRelativePath(_OriginPath, File);
                 fileName = Path.GetFileName(File);
 
-                if (!comparer.Compare(Path.Combine(_OriginPath, relativePath, fileName), 
+                if (!comparer.CompareFiles(Path.Combine(_OriginPath, relativePath, fileName), 
                     Path.Combine(_ReplicaPath, relativePath, fileName)))
                 {
                     CopySingleFile(relativePath, fileName);
@@ -45,9 +52,18 @@ namespace CopyCat.Synchro
                 }
             }
 
-            // TODO
-            // 1. Copy files from origin to replica
-            // 2. Substract replica files and DIRECTORIES from origin and delete remaining
+            string[] ReplicaFiles = Directory.GetFiles(_ReplicaPath, "*", SearchOption.AllDirectories);
+
+            List<String> ExcessiveFiles = ReplicaFiles.Except(OriginFiles).ToList();
+
+            foreach(var ExcessiveFile in ExcessiveFiles)
+            {
+                relativePath = Path.GetRelativePath(_ReplicaPath, ExcessiveFile);
+                fileName = Path.GetFileName(ExcessiveFile);
+                FileManager.DeleteFile(Path.Combine(_ReplicaPath, relativePath, fileName));
+            }
+
+            // 2. Substract replica files(done) and DIRECTORIES from origin and delete remaining
             // 3. Repeat every X seconds
         }
 
@@ -56,7 +72,7 @@ namespace CopyCat.Synchro
         /// </summary>
         /// <param name="relativePath"> Relative path from origin directory </param>
         /// <param name="fileName"> File name with extension </param>
-        public void CopySingleFile(string relativePath, string fileName)
+        public bool CopySingleFile(string relativePath, string fileName)
         {
             String FilePath = Path.Combine(_OriginPath, relativePath);
             String DestinationFilePath = Path.Combine(_ReplicaPath, relativePath);
@@ -64,10 +80,20 @@ namespace CopyCat.Synchro
             //DEBUG
             Console.WriteLine($"Copying file from {FilePath} to {DestinationFilePath}");
 
-            FileManager.CheckAndCreateDirectory(DestinationFilePath);
-            
-            File.Copy(Path.Combine(_OriginPath, relativePath, fileName), 
-                Path.Combine(_ReplicaPath, relativePath, fileName), true);
+            try
+            {
+                FileManager.CheckAndCreateDirectory(DestinationFilePath);
+
+                File.Copy(Path.Combine(_OriginPath, relativePath, fileName),
+                    Path.Combine(_ReplicaPath, relativePath, fileName), true);
+                return true;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error copying file {fileName} from {FilePath} to {DestinationFilePath}: {ex.Message}");
+                //LOG the error
+                return false;
+            }
         }
     }
 }

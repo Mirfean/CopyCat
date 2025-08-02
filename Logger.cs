@@ -1,4 +1,5 @@
-﻿using System;
+﻿using CopyCat.Synchro;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -19,7 +20,7 @@ namespace CopyCat
             LogFileName = $"CopyCatLogs-{DateTime.Now.ToString("yyyyMMdd_HHmmss")}.log";
         }
 
-        public void Log(string message)
+        public void Log(InteractionType interactionType, string message)
         {
             try
             {
@@ -31,7 +32,6 @@ namespace CopyCat
             catch (Exception ex)
             {
                 Console.WriteLine($"Error writing to log: {ex.Message}");
-                //ADD 
             }
         }
 

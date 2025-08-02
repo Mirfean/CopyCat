@@ -33,6 +33,14 @@ namespace CopyCat
                 Directory.Delete(path, true);
             }
         }
+        
+        public static void DeleteFile(string path)
+        {
+            if (FileExist(path))
+            {
+                File.Delete(path);
+            }
+        }
 
         public static bool CheckAndCreateDirectory(string path)
         {
