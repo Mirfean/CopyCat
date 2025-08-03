@@ -11,7 +11,8 @@ namespace CopyCat.Synchro
     {
         COPY,
         UPDATE,
-        DELETE
+        DELETE,
+        ERROR
     }
 
     internal class Synchronizer
@@ -60,7 +61,6 @@ namespace CopyCat.Synchro
                     Path.Combine(_ReplicaPath, relativePath, fileName)))
                 {
                     CopySingleFile(relativePath, fileName);
-                    //LOG
                 }
             }
 
@@ -74,6 +74,7 @@ namespace CopyCat.Synchro
                 relativePath = Path.GetRelativePath(_ReplicaPath, ExcessiveFile);
                 fileName = Path.GetFileName(ExcessiveFile);
                 FileManager.DeleteFile(Path.Combine(_ReplicaPath, relativePath, fileName));
+                logger.Log(InteractionType.DELETE, Path.Combine(_ReplicaPath, relativePath, fileName));
             }
         }
 
@@ -95,6 +96,7 @@ namespace CopyCat.Synchro
                     //DEBUG
                     Console.WriteLine($"Deleting excessive directory: {excessiveDir}");
                     FileManager.DeleteDirectory(Path.Combine(_ReplicaPath, excessiveDir));
+                    logger.Log(InteractionType.DELETE, Path.Combine(_ReplicaPath, excessiveDir));
                 }
 
                 foreach (var missingDir in MissingDirectories)
@@ -102,6 +104,7 @@ namespace CopyCat.Synchro
                     //DEBUG
                     Console.WriteLine($"Creating missing directory: {missingDir}");
                     FileManager.CreateDirectory(Path.Combine(_ReplicaPath, missingDir));
+                    logger.Log(InteractionType.COPY, Path.Combine(_ReplicaPath, missingDir));
                 }
             }
             catch (Exception ex)
@@ -129,12 +132,15 @@ namespace CopyCat.Synchro
 
                 File.Copy(Path.Combine(FilePath, fileName), 
                     Path.Combine(DestinationFilePath, fileName), true);
+
+                logger.Log(InteractionType.COPY, Path.Combine(DestinationFilePath, fileName));
+
                 return true;
             }
             catch (Exception ex)
             {
                 Console.WriteLine($"Error copying file {fileName} from {FilePath} to {DestinationFilePath}: {ex.Message}");
-                //LOG the error
+                logger.Log(InteractionType.ERROR, $"Error copying file {fileName} from {FilePath} to {DestinationFilePath}: {ex.Message}");
                 return false;
             }
         }

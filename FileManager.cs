@@ -51,5 +51,13 @@ namespace CopyCat
             }
             return true;
         }
+
+        internal static void CreateFile(string path, string file)
+        {
+            if (!FileExist(Path.Combine(path, file)))
+            {
+                File.Create(Path.Combine(path, file));
+            }
+        }
     }
 }
