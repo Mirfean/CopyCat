@@ -36,7 +36,7 @@ namespace CopyCat.Synchro
 
             SynchronizeFiles();
 
-            //SynchronizeDir();
+            SynchronizeDir();
         }
 
         private void SynchronizeFiles()
@@ -82,6 +82,9 @@ namespace CopyCat.Synchro
             string[] OriginDirectories = Directory.GetDirectories(_OriginPath, "*", SearchOption.AllDirectories);
             string[] ReplicaDirectories = Directory.GetDirectories(_ReplicaPath, "*", SearchOption.AllDirectories);
 
+            OriginDirectories = getRelativePath(_OriginPath, OriginDirectories);
+            ReplicaDirectories = getRelativePath(_ReplicaPath, ReplicaDirectories);
+
             List<String> ExcessiveDirectories = ReplicaDirectories.Except(OriginDirectories).ToList();
             List<String> MissingDirectories = OriginDirectories.Except(ReplicaDirectories).ToList();
 
@@ -91,14 +94,14 @@ namespace CopyCat.Synchro
                 {
                     //DEBUG
                     Console.WriteLine($"Deleting excessive directory: {excessiveDir}");
-                    FileManager.DeleteDirectory(excessiveDir);
+                    FileManager.DeleteDirectory(Path.Combine(_ReplicaPath, excessiveDir));
                 }
 
                 foreach (var missingDir in MissingDirectories)
                 {
                     //DEBUG
                     Console.WriteLine($"Creating missing directory: {missingDir}");
-                    FileManager.CreateDirectory(missingDir);
+                    FileManager.CreateDirectory(Path.Combine(_ReplicaPath, missingDir));
                 }
             }
             catch (Exception ex)
@@ -134,6 +137,17 @@ namespace CopyCat.Synchro
                 //LOG the error
                 return false;
             }
+        }
+
+        string[] getRelativePath(string fullPath, string[] paths)
+        {
+            string[] relativePaths = new string[paths.Length];
+            for (int i = 0; i < paths.Length; i++)
+            {
+                relativePaths[i] = Path.GetRelativePath(fullPath, paths[i]);
+                Console.WriteLine($"Relative path: {relativePaths[i]}");
+            }
+            return relativePaths;
         }
     }
 }
