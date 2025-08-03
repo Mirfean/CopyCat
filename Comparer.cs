@@ -76,11 +76,13 @@ namespace CopyCat
 
         #region Directories Comparing
 
-        public bool CompareDirectories(String originDirectory, String replicaDirectory)
+        public bool CompareDirectories(String firstDirectory, String secondDirectory)
         {
             return false;
         }
 
         #endregion
     }
+
+
 }

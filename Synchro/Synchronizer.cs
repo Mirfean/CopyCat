@@ -33,18 +33,30 @@ namespace CopyCat.Synchro
         public void Synchronize()
         {
             Console.WriteLine($"Synchronizing from {_OriginPath} to {_ReplicaPath}");
-            
+
+            SynchronizeFiles();
+
+            //SynchronizeDir();
+        }
+
+        private void SynchronizeFiles()
+        {
             var OriginFiles = Directory.GetFiles(_OriginPath, "*", SearchOption.AllDirectories);
 
-            string relativePath;
+            string? relativePath;
             string fileName;
 
             foreach (var File in OriginFiles)
             {
-                relativePath = Path.GetRelativePath(_OriginPath, File);
                 fileName = Path.GetFileName(File);
+                relativePath = Path.GetDirectoryName(Path.GetRelativePath(_OriginPath, File));
 
-                if (!comparer.CompareFiles(Path.Combine(_OriginPath, relativePath, fileName), 
+                if (relativePath == null)
+                {
+                    relativePath = string.Empty; // Handle case where the file is in the root directory
+                }
+
+                if (!comparer.CompareFiles(Path.Combine(_OriginPath, relativePath, fileName),
                     Path.Combine(_ReplicaPath, relativePath, fileName)))
                 {
                     CopySingleFile(relativePath, fileName);
@@ -52,19 +64,47 @@ namespace CopyCat.Synchro
                 }
             }
 
+            // Removing excessive files from replica
             string[] ReplicaFiles = Directory.GetFiles(_ReplicaPath, "*", SearchOption.AllDirectories);
 
             List<String> ExcessiveFiles = ReplicaFiles.Except(OriginFiles).ToList();
 
-            foreach(var ExcessiveFile in ExcessiveFiles)
+            foreach (var ExcessiveFile in ExcessiveFiles)
             {
                 relativePath = Path.GetRelativePath(_ReplicaPath, ExcessiveFile);
                 fileName = Path.GetFileName(ExcessiveFile);
                 FileManager.DeleteFile(Path.Combine(_ReplicaPath, relativePath, fileName));
             }
+        }
 
-            // 2. Substract replica files(done) and DIRECTORIES from origin and delete remaining
-            // 3. Repeat every X seconds
+        private void SynchronizeDir()
+        {
+            string[] OriginDirectories = Directory.GetDirectories(_OriginPath, "*", SearchOption.AllDirectories);
+            string[] ReplicaDirectories = Directory.GetDirectories(_ReplicaPath, "*", SearchOption.AllDirectories);
+
+            List<String> ExcessiveDirectories = ReplicaDirectories.Except(OriginDirectories).ToList();
+            List<String> MissingDirectories = OriginDirectories.Except(ReplicaDirectories).ToList();
+
+            try
+            {
+                foreach (var excessiveDir in ExcessiveDirectories)
+                {
+                    //DEBUG
+                    Console.WriteLine($"Deleting excessive directory: {excessiveDir}");
+                    FileManager.DeleteDirectory(excessiveDir);
+                }
+
+                foreach (var missingDir in MissingDirectories)
+                {
+                    //DEBUG
+                    Console.WriteLine($"Creating missing directory: {missingDir}");
+                    FileManager.CreateDirectory(missingDir);
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error synchronizing directories: {ex.Message}");
+            }
         }
 
         /// <summary>
@@ -84,8 +124,8 @@ namespace CopyCat.Synchro
             {
                 FileManager.CheckAndCreateDirectory(DestinationFilePath);
 
-                File.Copy(Path.Combine(_OriginPath, relativePath, fileName),
-                    Path.Combine(_ReplicaPath, relativePath, fileName), true);
+                File.Copy(Path.Combine(FilePath, fileName), 
+                    Path.Combine(DestinationFilePath, fileName), true);
                 return true;
             }
             catch (Exception ex)
