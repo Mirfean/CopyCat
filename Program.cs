@@ -10,8 +10,8 @@ partial class Program
         InitCheckers(args);
 
         //Start synchronization
-        Synchronizer synchronizer = new Synchronizer(args[0], args[1], args[3]);
-        synchronizer.Synchronize();
+        Synchronizer synchronizer = new Synchronizer(args[0], args[1], args[2], args[3]);
+        synchronizer.SynchronizeLoop();
     }
 
     public static bool UserChoice(string message)

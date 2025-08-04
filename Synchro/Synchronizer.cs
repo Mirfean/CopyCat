@@ -19,31 +19,78 @@ namespace CopyCat.Synchro
     {
         private readonly String _OriginPath;
         private readonly String _ReplicaPath;
+        private readonly int _SyncInterval;
         private Comparer comparer;
         private Logger logger;
 
-        public Synchronizer(String originPath, String replicaPath, String logPath)
+        //Locker for file operations
+        private static readonly object _syncLock = new object();
+
+        public Synchronizer(String originPath, String replicaPath, String syncInterval, String logPath)
         {
             _OriginPath = originPath;
             _ReplicaPath = replicaPath;
-            comparer = new Comparer();
             logger = new Logger(logPath);
+            comparer = new Comparer();
+
+            //TODO: Add cool parsing for syncInterval (100ms, 13[s], 2m, 3h)
+            _SyncInterval = int.Parse(syncInterval) * 1000;
         }
 
-        // Main synchronization method
-        public void Synchronize()
+        public void SynchronizeLoop()
         {
-            Console.WriteLine($"Synchronizing from {_OriginPath} to {_ReplicaPath}");
+            
+            using (Timer timer = new Timer(Synchronize, null, 0, _SyncInterval))
+            {
+                Console.ReadKey();
+            }
+            Console.WriteLine("Synchronization ended.");
+        }
 
-            SynchronizeFiles();
+        /// <summary>
+        /// Main synchronization method triggered by the timer
+        /// </summary>
+        private void Synchronize(object? state)
+        {
+            lock (_syncLock)
+            {
+                try
+                {
+                    SynchronizeFiles();
+                }
+                catch (Exception ex)
+                {
+                    logger.AddMessage(InteractionType.ERROR, $"Error during file synchronization: {ex.Message}");
+                }
+            }
 
-            SynchronizeDir();
+            lock (_syncLock)
+            {
+                try
+                {
+                    SynchronizeDir();
+                }
+                catch (Exception ex)
+                {
+                    logger.AddMessage(InteractionType.ERROR, $"Error during directory synchronization: {ex.Message}");
+                }
+            }
+
+            
         }
 
         private void SynchronizeFiles()
         {
             var OriginFiles = Directory.GetFiles(_OriginPath, "*", SearchOption.AllDirectories);
 
+            UpdateReplicaFiles(OriginFiles);
+
+            // Removing excessive files from replica
+            RemoveExcessiveFiles(OriginFiles);
+        }
+
+        private void UpdateReplicaFiles(string[] OriginFiles)
+        {
             string? relativePath;
             string fileName;
 
@@ -63,22 +110,58 @@ namespace CopyCat.Synchro
                     CopySingleFile(relativePath, fileName);
                 }
             }
+            logger.Log("Copying files");
+        }
 
-            logger.Log("Synchronizing files");
+        private void RemoveExcessiveFiles(string[] OriginFiles)
+        {
+            string? relativePath;
+            string fileName;
 
-            // Removing excessive files from replica
+            string[] TempOriginFiles = new string[OriginFiles.Length];
             string[] ReplicaFiles = Directory.GetFiles(_ReplicaPath, "*", SearchOption.AllDirectories);
+            
 
-            List<String> ExcessiveFiles = ReplicaFiles.Except(OriginFiles).ToList();
+            for (int i = 0; i < TempOriginFiles.Length; i++)
+            {
+                TempOriginFiles[i] = Path.GetRelativePath(_OriginPath, OriginFiles[i]);
+            }
+
+            for (int i = 0; i < ReplicaFiles.Length; i++)
+            {
+                ReplicaFiles[i] = Path.GetRelativePath(_ReplicaPath, ReplicaFiles[i]);
+            }
+
+            List<string> ExcessiveFiles = ReplicaFiles.Except(TempOriginFiles).ToList();
 
             foreach (var ExcessiveFile in ExcessiveFiles)
             {
-                relativePath = Path.GetRelativePath(_ReplicaPath, ExcessiveFile);
                 fileName = Path.GetFileName(ExcessiveFile);
+                relativePath = Path.GetDirectoryName(Path.Combine(_ReplicaPath, ExcessiveFile));
+
+                if (relativePath == null)
+                {
+                    relativePath = string.Empty; // Handle case where the file is in the root directory
+                }
+
+                RemoveFileAndLog(relativePath, fileName);
+            }
+            logger.Log("Removing excessive files");
+        }
+
+        private void RemoveFileAndLog(string relativePath, string fileName)
+        {
+            try
+            {
                 FileManager.DeleteFile(Path.Combine(_ReplicaPath, relativePath, fileName));
                 logger.AddMessage(InteractionType.DELETE, Path.Combine(_ReplicaPath, relativePath, fileName));
             }
-            logger.Log("Removing excessive files");
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error removing file {fileName} from {Path.Combine(_ReplicaPath, relativePath)}: {ex.Message}");
+                logger.AddMessage(InteractionType.ERROR, $"Error removing file {fileName} from {Path.Combine(_ReplicaPath, relativePath)}: {ex.Message}");
+            }
+            
         }
 
         private void SynchronizeDir()
@@ -96,8 +179,6 @@ namespace CopyCat.Synchro
             {
                 foreach (var excessiveDir in ExcessiveDirectories)
                 {
-                    //DEBUG
-                    Console.WriteLine($"Deleting excessive directory: {excessiveDir}");
                     FileManager.DeleteDirectory(Path.Combine(_ReplicaPath, excessiveDir));
                     logger.AddMessage(InteractionType.DELETE, Path.Combine(_ReplicaPath, excessiveDir));
                 }
@@ -106,8 +187,6 @@ namespace CopyCat.Synchro
 
                 foreach (var missingDir in MissingDirectories)
                 {
-                    //DEBUG
-                    Console.WriteLine($"Creating missing directory: {missingDir}");
                     FileManager.CreateDirectory(Path.Combine(_ReplicaPath, missingDir));
                     logger.AddMessage(InteractionType.COPY, Path.Combine(_ReplicaPath, missingDir));
                 }
@@ -125,13 +204,10 @@ namespace CopyCat.Synchro
         /// </summary>
         /// <param name="relativePath"> Relative path from origin directory </param>
         /// <param name="fileName"> File name with extension </param>
-        public bool CopySingleFile(string relativePath, string fileName)
+        bool CopySingleFile(string relativePath, string fileName)
         {
             String FilePath = Path.Combine(_OriginPath, relativePath);
             String DestinationFilePath = Path.Combine(_ReplicaPath, relativePath);
-
-            //DEBUG
-            Console.WriteLine($"Copying file from {FilePath} to {DestinationFilePath}");
 
             try
             {
@@ -158,7 +234,6 @@ namespace CopyCat.Synchro
             for (int i = 0; i < paths.Length; i++)
             {
                 relativePaths[i] = Path.GetRelativePath(fullPath, paths[i]);
-                Console.WriteLine($"Relative path: {relativePaths[i]}");
             }
             return relativePaths;
         }

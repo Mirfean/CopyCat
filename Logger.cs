@@ -34,6 +34,11 @@ namespace CopyCat
             {
                 LogFileName = Path.GetFileName(_LogPath);
                 _LogPath = Path.GetDirectoryName(_LogPath);
+                if (_LogPath == null)
+                {
+                    throw new ArgumentException("Invalid log path provided.");
+                }
+
             }
         }
 
@@ -46,6 +51,10 @@ namespace CopyCat
 
         public void Log(string currentActionMessage)
         {
+            if (CurrentMessage == string.Empty)
+            {
+                return;
+            }
             try
             {
                 lock (_lock)
@@ -53,6 +62,7 @@ namespace CopyCat
                     using (var writer = new StreamWriter(Path.Combine(_LogPath, LogFileName), true))
                     {
                         writer.WriteLine(CurrentMessage);
+                        Console.WriteLine(CurrentMessage);
                     }
                 }
                 CurrentMessage = string.Empty;
