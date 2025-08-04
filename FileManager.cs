@@ -56,7 +56,7 @@ namespace CopyCat
         {
             if (!FileExist(Path.Combine(path, file)))
             {
-                File.Create(Path.Combine(path, file));
+                File.Create(Path.Combine(path, file)).Dispose();
             }
         }
     }

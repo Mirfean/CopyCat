@@ -64,6 +64,8 @@ namespace CopyCat.Synchro
                 }
             }
 
+            logger.Log("Synchronizing files");
+
             // Removing excessive files from replica
             string[] ReplicaFiles = Directory.GetFiles(_ReplicaPath, "*", SearchOption.AllDirectories);
 
@@ -74,8 +76,9 @@ namespace CopyCat.Synchro
                 relativePath = Path.GetRelativePath(_ReplicaPath, ExcessiveFile);
                 fileName = Path.GetFileName(ExcessiveFile);
                 FileManager.DeleteFile(Path.Combine(_ReplicaPath, relativePath, fileName));
-                logger.Log(InteractionType.DELETE, Path.Combine(_ReplicaPath, relativePath, fileName));
+                logger.AddMessage(InteractionType.DELETE, Path.Combine(_ReplicaPath, relativePath, fileName));
             }
+            logger.Log("Removing excessive files");
         }
 
         private void SynchronizeDir()
@@ -96,16 +99,20 @@ namespace CopyCat.Synchro
                     //DEBUG
                     Console.WriteLine($"Deleting excessive directory: {excessiveDir}");
                     FileManager.DeleteDirectory(Path.Combine(_ReplicaPath, excessiveDir));
-                    logger.Log(InteractionType.DELETE, Path.Combine(_ReplicaPath, excessiveDir));
+                    logger.AddMessage(InteractionType.DELETE, Path.Combine(_ReplicaPath, excessiveDir));
                 }
+
+                logger.Log("Removing excessive directories");
 
                 foreach (var missingDir in MissingDirectories)
                 {
                     //DEBUG
                     Console.WriteLine($"Creating missing directory: {missingDir}");
                     FileManager.CreateDirectory(Path.Combine(_ReplicaPath, missingDir));
-                    logger.Log(InteractionType.COPY, Path.Combine(_ReplicaPath, missingDir));
+                    logger.AddMessage(InteractionType.COPY, Path.Combine(_ReplicaPath, missingDir));
                 }
+
+                logger.Log("Creating missing directories");
             }
             catch (Exception ex)
             {
@@ -133,14 +140,14 @@ namespace CopyCat.Synchro
                 File.Copy(Path.Combine(FilePath, fileName), 
                     Path.Combine(DestinationFilePath, fileName), true);
 
-                logger.Log(InteractionType.COPY, Path.Combine(DestinationFilePath, fileName));
+                logger.AddMessage(InteractionType.COPY, Path.Combine(DestinationFilePath, fileName));
 
                 return true;
             }
             catch (Exception ex)
             {
                 Console.WriteLine($"Error copying file {fileName} from {FilePath} to {DestinationFilePath}: {ex.Message}");
-                logger.Log(InteractionType.ERROR, $"Error copying file {fileName} from {FilePath} to {DestinationFilePath}: {ex.Message}");
+                logger.AddMessage(InteractionType.ERROR, $"Error copying file {fileName} from {FilePath} to {DestinationFilePath}: {ex.Message}");
                 return false;
             }
         }

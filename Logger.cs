@@ -11,7 +11,9 @@ namespace CopyCat
     {
         readonly String _LogPath;
         String LogFileName;
-        
+
+        string CurrentMessage = string.Empty;
+
         static readonly object _lock = new object();
 
         public Logger(String logPath)
@@ -35,7 +37,33 @@ namespace CopyCat
             }
         }
 
-        public void Log(InteractionType interactionType, string message)
+        public void AddMessage(InteractionType interactionType, string message)
+        {
+            string FullMessage = $"{DateTime.Now}: {interactionType} - {message}";
+
+            CurrentMessage += FullMessage + Environment.NewLine;
+        }
+
+        public void Log(string currentActionMessage)
+        {
+            try
+            {
+                lock (_lock)
+                {
+                    using (var writer = new StreamWriter(Path.Combine(_LogPath, LogFileName), true))
+                    {
+                        writer.WriteLine(CurrentMessage);
+                    }
+                }
+                CurrentMessage = string.Empty;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error writing to log: {ex.Message} during {currentActionMessage}");
+            }
+        }
+
+        public void LogSingleLine(string message)
         {
             try
             {
@@ -46,12 +74,10 @@ namespace CopyCat
                         writer.WriteLine($"{DateTime.Now}: {message}");
                     }
                 }
-
-                
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Error writing to log: {ex.Message}");
+                Console.WriteLine($"Error writing to log: {ex.Message} during single line log");
             }
         }
 
