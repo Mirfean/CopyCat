@@ -13,8 +13,11 @@ Example:
 C:\CopyCat>CopyCat.exe "C:\Private\Folder" "D:\Backup" "300" "D:\Logs"
 
 `<source_directory>` - path to the directory you want to synchronize.
+
 `<destination_directory>` - path to the directory where you want to synchronize files. If you already have that directory, CopyCat will ask if you want to clear it.
+
 `<synchronization_interval>` - interval in seconds at which you want to synchronize files. You can use few formats(look below)
+
 `<log_file_path>` - path with directory where you want to save your logs.
 
 Synchronization interval formats (examples):
