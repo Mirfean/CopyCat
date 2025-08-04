@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace CopyCat
+namespace CopyCat.Helpers
 {
     public static class FileManager
     {
@@ -18,12 +18,21 @@ namespace CopyCat
             return Directory.Exists(path);
         }
 
-        public static void CreateDirectory(string path)
+        public static bool CreateDirectory(string path)
         {
-            if (!DirectoryExist(path))
+            try
             {
-                Directory.CreateDirectory(path);
+                if (!DirectoryExist(path))
+                {
+                    Directory.CreateDirectory(path);
+                }
             }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error creating directory '{path}': {ex.Message}");
+                return false;
+            }
+            return true;
         }
 
         public static void DeleteDirectory(string path)

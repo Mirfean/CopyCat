@@ -1,22 +1,22 @@
-﻿using CopyCat.Synchro;
+﻿using CopyCat.Helpers;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace CopyCat
+namespace CopyCat.Synchro
 {
     internal class Logger
     {
-        readonly String _LogPath;
-        String LogFileName;
+        readonly string _LogPath;
+        string LogFileName;
 
         string CurrentMessage = string.Empty;
 
         static readonly object _lock = new object();
 
-        public Logger(String logPath)
+        public Logger(string logPath)
         {
 
             //If creating new log file

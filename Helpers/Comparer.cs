@@ -6,17 +6,13 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Security.Cryptography;
 
-namespace CopyCat
+namespace CopyCat.Helpers
 {
     internal class Comparer
     {
         #region Files Comparing
-        public bool CompareFiles(String originFile, String replicaFile)
+        public bool CompareFiles(string originFile, string replicaFile)
         {
-            if (!FileManager.FileExist(originFile) || !FileManager.FileExist(replicaFile))
-            {
-                return false;
-            }
 
             FileInfo originFileInfo = new FileInfo(originFile);
             FileInfo replicaFileInfo = new FileInfo(replicaFile);
@@ -41,7 +37,12 @@ namespace CopyCat
             return true;
         }
 
-        bool CompareSHA256(String originFile, String replicaFile)
+        public bool SameFilesExist(string originFile, string replicaFile)
+        {
+            return FileManager.FileExist(originFile) && FileManager.FileExist(replicaFile) ? true : false;
+        }
+
+        bool CompareSHA256(string originFile, string replicaFile)
         {
             byte[]? originHash = GetSHA256(originFile);
             byte[]? replicaHash = GetSHA256(replicaFile);
@@ -52,7 +53,7 @@ namespace CopyCat
             return originHash.SequenceEqual(replicaHash);
         }
 
-        byte[]? GetSHA256(String FilePath)
+        byte[]? GetSHA256(string FilePath)
         {
             try
             {
@@ -72,15 +73,6 @@ namespace CopyCat
                 return null;
             }
         }
-        #endregion
-
-        #region Directories Comparing
-
-        public bool CompareDirectories(String firstDirectory, String secondDirectory)
-        {
-            return false;
-        }
-
         #endregion
     }
 

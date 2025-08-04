@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.IO;
+using CopyCat.Helpers;
 
 namespace CopyCat.Synchro
 {
@@ -39,7 +40,6 @@ namespace CopyCat.Synchro
 
         public void SynchronizeLoop()
         {
-            
             using (Timer timer = new Timer(Synchronize, null, 0, _SyncInterval))
             {
                 Console.ReadKey();
@@ -52,6 +52,14 @@ namespace CopyCat.Synchro
         /// </summary>
         private void Synchronize(object? state)
         {
+            if (!CheckDirAndHandle(_OriginPath) || !CheckDirAndHandle(_OriginPath))
+            {
+                //End application if directories are not valid
+                logger.AddMessage(InteractionType.ERROR, "Synchronization aborted due to invalid directories.");
+                logger.Log("Synchronization canceled due to invalid directories.");
+                Environment.Exit(1);
+            }
+
             lock (_syncLock)
             {
                 try
@@ -76,7 +84,26 @@ namespace CopyCat.Synchro
                 }
             }
 
-            
+
+        }
+
+        private bool CheckDirAndHandle(string path)
+        {
+            if (!FileManager.DirectoryExist(path))
+            {
+                Console.WriteLine($"Sync path '{path}' does not exist anymore.");
+                if (Program.UserChoice("Do you want to create it?"))
+                {
+                    FileManager.CreateDirectory(path);
+                    logger.AddMessage(InteractionType.COPY, $"Created directory: {path}");
+                }
+                else
+                {
+                    return false;
+                }
+            }
+
+            return true;
         }
 
         private void SynchronizeFiles()
@@ -85,7 +112,6 @@ namespace CopyCat.Synchro
 
             UpdateReplicaFiles(OriginFiles);
 
-            // Removing excessive files from replica
             RemoveExcessiveFiles(OriginFiles);
         }
 
@@ -93,6 +119,9 @@ namespace CopyCat.Synchro
         {
             string? relativePath;
             string fileName;
+
+            string originFile;
+            string replicaFile;
 
             foreach (var File in OriginFiles)
             {
@@ -104,10 +133,20 @@ namespace CopyCat.Synchro
                     relativePath = string.Empty; // Handle case where the file is in the root directory
                 }
 
-                if (!comparer.CompareFiles(Path.Combine(_OriginPath, relativePath, fileName),
-                    Path.Combine(_ReplicaPath, relativePath, fileName)))
+                originFile = Path.Combine(_OriginPath, relativePath, fileName);
+                replicaFile = Path.Combine(_ReplicaPath, relativePath, fileName);
+
+                if (comparer.SameFilesExist(originFile, replicaFile))
                 {
-                    CopySingleFile(relativePath, fileName);
+                    if (!comparer.CompareFiles(Path.Combine(_OriginPath, relativePath, fileName),
+                    Path.Combine(_ReplicaPath, relativePath, fileName)))
+                    {
+                        CopyUpdateFile(relativePath, fileName, InteractionType.UPDATE);
+                    }
+                }
+                else 
+                {
+                    CopyUpdateFile(relativePath, fileName);
                 }
             }
             logger.Log("Copying files");
@@ -141,7 +180,7 @@ namespace CopyCat.Synchro
 
                 if (relativePath == null)
                 {
-                    relativePath = string.Empty; // Handle case where the file is in the root directory
+                    relativePath = string.Empty;
                 }
 
                 RemoveFileAndLog(relativePath, fileName);
@@ -204,7 +243,7 @@ namespace CopyCat.Synchro
         /// </summary>
         /// <param name="relativePath"> Relative path from origin directory </param>
         /// <param name="fileName"> File name with extension </param>
-        bool CopySingleFile(string relativePath, string fileName)
+        bool CopyUpdateFile(string relativePath, string fileName, InteractionType interactionType = InteractionType.COPY)
         {
             String FilePath = Path.Combine(_OriginPath, relativePath);
             String DestinationFilePath = Path.Combine(_ReplicaPath, relativePath);
@@ -216,7 +255,7 @@ namespace CopyCat.Synchro
                 File.Copy(Path.Combine(FilePath, fileName), 
                     Path.Combine(DestinationFilePath, fileName), true);
 
-                logger.AddMessage(InteractionType.COPY, Path.Combine(DestinationFilePath, fileName));
+                logger.AddMessage(interactionType, Path.Combine(DestinationFilePath, fileName));
 
                 return true;
             }
@@ -236,6 +275,11 @@ namespace CopyCat.Synchro
                 relativePaths[i] = Path.GetRelativePath(fullPath, paths[i]);
             }
             return relativePaths;
+        }
+
+        void CheckBothPaths()
+        {
+             
         }
     }
 }
